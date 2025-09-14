@@ -112,7 +112,7 @@
 
             const inputDigit = (digit) => {
                 if (waitingForOperand) {
-                    setDisplay(String(digit));
+                    setDisplay(display === '-' ? '-' + digit : String(digit));
                     setWaitingForOperand(false);
                 } else {
                     setDisplay(display === '0' ? String(digit) : display + digit);
@@ -121,7 +121,7 @@
 
             const inputDot = () => {
                 if (waitingForOperand) {
-                    setDisplay('0.');
+                    setDisplay(display === '-' ? '-0.' : '0.');
                     setWaitingForOperand(false);
                 } else if (display.indexOf('.') === -1) {
                     setDisplay(display + '.');
@@ -147,8 +147,26 @@
             };
 
             const performOperation = (nextOperation) => {
+                if (display === '-') {
+                    setOperation(nextOperation);
+                    setDisplay(String(previousValue));
+                    setWaitingForOperand(true);
+                    return;
+                }
+
+                if (waitingForOperand && nextOperation === '-') {
+                    setDisplay('-');
+                    setWaitingForOperand(false);
+                    return;
+                }
+
+                if (waitingForOperand) {
+                    setOperation(nextOperation);
+                    return;
+                }
+
                 const inputValue = parseFloat(display);
-                
+
                 if (previousValue === null) {
                     setPreviousValue(inputValue);
                 } else if (operation) {
@@ -281,5 +299,6 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 </body>
 </html>
