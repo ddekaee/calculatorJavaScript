@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator JavaScript</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #E0E5EC;
+        }
+        .calculator {
+            width: 340px;
+            background-color: #E0E5EC;
+            border-radius: 30px;
+            box-shadow: 12px 12px 24px #babecc, -12px -12px 24px #ffffff;
+            padding: 20px;
+        }
+
+        .display-container {
+            background: #E0E5EC;
+            border-radius: 20px;
+            box-shadow: inset 6px 6px 12px #babecc, inset -6px -6px 12px #ffffff;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .display {
+            height: 80px;
+            color: #3A3A3A;
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .button {
+            height: 65px;
+            font-size: 1.25rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E0E5EC;
+            box-shadow: 6px 6px 12px #babecc, -6px -6px 12px #ffffff;
+            color: #5E626A;
+        }
+        
+        .button:active {
+            box-shadow: inset 4px 4px 8px #babecc, inset -4px -4px 8px #ffffff;
+            transform: scale(0.97);
+            color: #3498db;
+        }
+        
+        .number, .special, .operator, .equals {
+            background-color: transparent;
+        }
+        .number:hover, .special:hover, .operator:hover, .equals:hover {
+            background-color: transparent;
+        }
+        
+        .operator {
+            color: #3498db;
+            font-weight: 700;
+        }
+        
+        .special {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        
+        .equals {
+            background-color: #3498db;
+            box-shadow: 6px 6px 12px #2c7ab0, -6px -6px 12px #3ca9ff;
+            color: white;
+            font-weight: 700;
+        }
+        
+        .equals:active {
+            background-color: #3498db;
+            box-shadow: inset 4px 4px 8px #2c7ab0, inset -4px -4px 8px #3ca9ff;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div id="root" class="calculator"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Calculator = () => {
+            const [display, setDisplay] = useState('0');
+            const [previousValue, setPreviousValue] = useState(null);
+            const [operation, setOperation] = useState(null);
+            const [waitingForOperand, setWaitingForOperand] = useState(false);
+
+            const inputDigit = (digit) => {
+                if (waitingForOperand) {
+                    setDisplay(String(digit));
+                    setWaitingForOperand(false);
+                } else {
+                    setDisplay(display === '0' ? String(digit) : display + digit);
+                }
+            };
+
+            const inputDot = () => {
+                if (waitingForOperand) {
+                    setDisplay('0.');
+                    setWaitingForOperand(false);
+                } else if (display.indexOf('.') === -1) {
+                    setDisplay(display + '.');
+                }
+            };
+
+            const clearDisplay = () => {
+                setDisplay('0');
+                setPreviousValue(null);
+                setOperation(null);
+                setWaitingForOperand(false);
+            };
+
+            const toggleSign = () => {
+                const newValue = parseFloat(display) * -1;
+                setDisplay(String(newValue));
+            };
+
+            const inputPercent = () => {
+                const currentValue = parseFloat(display);
+                const newValue = currentValue / 100;
+                setDisplay(String(newValue));
+            };
+
+            const performOperation = (nextOperation) => {
+                const inputValue = parseFloat(display);
+                
+                if (previousValue === null) {
+                    setPreviousValue(inputValue);
+                } else if (operation) {
+                    const currentValue = previousValue || 0;
+                    let newValue;
+                    
+                    switch(operation) {
+                        case '+':
+                            newValue = currentValue + inputValue;
+                            break;
+                        case '-':
+                            newValue = currentValue - inputValue;
+                            break;
+                        case '*':
+                            newValue = currentValue * inputValue;
+                            break;
+                        case '/':
+                            newValue = currentValue / inputValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    newValue = Math.round(newValue * 1000000) / 1000000;
+                    
+                    setPreviousValue(newValue);
+                    setDisplay(String(newValue));
+                }
+                
+                setWaitingForOperand(true);
+                setOperation(nextOperation);
+            };
+
+            const handleEquals = () => {
+                if (operation === null || previousValue === null) {
+                    return;
+                }
+                
+                performOperation(null);
+                setOperation(null);
+            };
+
+            useEffect(() => {
+                const handleKeyDown = (event) => {
+                    const { key } = event;
+                    
+                    if (/[0-9]/.test(key)) {
+                        event.preventDefault();
+                        inputDigit(parseInt(key, 10));
+                    } else if (key === '.') {
+                        event.preventDefault();
+                        inputDot();
+                    } else if (key === 'Enter' || key === '=') {
+                        event.preventDefault();
+                        handleEquals();
+                    } else if (key === 'Escape' || key === 'Delete') {
+                        event.preventDefault();
+                        clearDisplay();
+                    } else if (key === '+') {
+                        event.preventDefault();
+                        performOperation('+');
+                    } else if (key === '-') {
+                        event.preventDefault();
+                        performOperation('-');
+                    } else if (key === '*') {
+                        event.preventDefault();
+                        performOperation('*');
+                    } else if (key === '/') {
+                        event.preventDefault();
+                        performOperation('/');
+                    } else if (key === '%') {
+                        event.preventDefault();
+                        inputPercent();
+                    }
+                };
+                
+                window.addEventListener('keydown', handleKeyDown);
+                return () => {
+                    window.removeEventListener('keydown', handleKeyDown);
+                };
+            }, [display, previousValue, operation, waitingForOperand]);
+
+            return (
+                <div className="calculator">
+                    <div className="display-container">
+                        <div id="display" className="display">
+                            {display}
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-4">
+                        <button id="clear" onClick={clearDisplay} className="button special">AC</button>
+                        <button onClick={toggleSign} className="button special">±</button>
+                        <button onClick={inputPercent} className="button special">%</button>
+                        <button id="divide" onClick={() => performOperation('/')} className="button operator">÷</button>
+                        
+                        <button id="seven" onClick={() => inputDigit(7)} className="button number">7</button>
+                        <button id="eight" onClick={() => inputDigit(8)} className="button number">8</button>
+                        <button id="nine" onClick={() => inputDigit(9)} className="button number">9</button>
+                        <button id="multiply" onClick={() => performOperation('*')} className="button operator">×</button>
+                        
+                        <button id="four" onClick={() => inputDigit(4)} className="button number">4</button>
+                        <button id="five" onClick={() => inputDigit(5)} className="button number">5</button>
+                        <button id="six" onClick={() => inputDigit(6)} className="button number">6</button>
+                        <button id="subtract" onClick={() => performOperation('-')} className="button operator">-</button>
+                        
+                        <button id="one" onClick={() => inputDigit(1)} className="button number">1</button>
+                        <button id="two" onClick={() => inputDigit(2)} className="button number">2</button>
+                        <button id="three" onClick={() => inputDigit(3)} className="button number">3</button>
+                        <button id="add" onClick={() => performOperation('+')} className="button operator">+</button>
+                        
+                        <button id="zero" onClick={() => inputDigit(0)} className="button number col-span-2">0</button>
+                        <button id="decimal" onClick={inputDot} className="button number">.</button>
+                        <button id="equals" onClick={handleEquals} className="button equals">=</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen text-gray-700">
+                    <h1 className="text-3xl font-bold mb-6 tracking-wide">Kalkulator Neumorphic</h1>
+                    <Calculator />
+                    <p className="mt-8 text-sm text-gray-500">Desain Soft UI dengan React & Tailwind</p>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
